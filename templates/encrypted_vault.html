@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encrypted Vault - SecureCloud Corp</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .note-card {
+            border-left: 4px solid #0d6efd;
+            transition: transform 0.2s;
+        }
+        .note-card:hover {
+            transform: translateX(5px);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">🔒 SecureCloud Security Suite</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('profile') }}">Profile</a></li>
+                    {% if user.is_admin %}
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('admin') }}">Admin</a></li>
+                    {% endif %}
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <h1 class="mb-4">🔒 Encrypted Vault</h1>
+        <p class="lead text-muted">Store sensitive information with military-grade AES-256 encryption</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row">
+            <!-- Create New Note -->
+            <div class="col-md-5 mb-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5>➕ Create Encrypted Note</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('encrypted_vault') }}">
+                            <input type="hidden" name="action" value="create">
+                            
+                            <div class="mb-3">
+                                <label for="title" class="form-label">Note Title</label>
+                                <input type="text" class="form-control" id="title" name="title" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="content" class="form-label">Content</label>
+                                <textarea class="form-control" id="content" name="content" rows="5" required></textarea>
+                                <div class="form-text">Your note will be encrypted with AES-256</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="encryption_key" class="form-label">Encryption Password</label>
+                                <input type="password" class="form-control" id="encryption_key" name="encryption_key" required>
+                                <div class="form-text">Remember this password - it cannot be recovered!</div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100">🔐 Encrypt & Save</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Security Info -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6>🛡️ Security Features</h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2">✅ <strong>AES-256 Encryption</strong></li>
+                            <li class="mb-2">✅ <strong>Zero-Knowledge Architecture</strong></li>
+                            <li class="mb-2">✅ <strong>Password-Protected</strong></li>
+                            <li class="mb-0">✅ <strong>Client-Side Security</strong></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Your Encrypted Notes -->
+            <div class="col-md-7">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5>📚 Your Encrypted Notes ({{ notes|length }})</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if notes %}
+                            {% for note in notes %}
+                            <div class="card note-card mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">{{ note.title }}</h6>
+                                            <p class="text-muted small mb-2">
+                                                <i class="bi bi-calendar"></i> {{ note.created_at.strftime('%B %d, %Y at %H:%M') }}
+                                            </p>
+                                            
+                                            {% if note.id == decrypted_note_id %}
+                                                <div class="alert alert-info mt-2">
+                                                    <strong>📝 Decrypted Content:</strong>
+                                                    <p class="mb-0 mt-2" style="white-space: pre-wrap;">{{ decrypted_content }}</p>
+                                                </div>
+                                            {% else %}
+                                                <p class="text-muted small">
+                                                    🔐 Encrypted • {{ note.encrypted_content[:50] }}...
+                                                </p>
+                                            {% endif %}
+                                        </div>
+                                        <div class="ms-3">
+                                            <span class="badge bg-success">Encrypted</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-3">
+                                        <!-- Decrypt Form -->
+                                        <form method="POST" action="{{ url_for('encrypted_vault') }}" class="d-inline">
+                                            <input type="hidden" name="action" value="decrypt">
+                                            <input type="hidden" name="note_id" value="{{ note.id }}">
+                                            <div class="input-group input-group-sm">
+                                                <input type="password" class="form-control" name="decryption_key" placeholder="Enter password to decrypt" required>
+                                                <button type="submit" class="btn btn-outline-primary btn-sm">🔓 Decrypt</button>
+                                            </div>
+                                        </form>
+
+                                        <!-- Delete Form -->
+                                        <form method="POST" action="{{ url_for('encrypted_vault') }}" class="d-inline float-end" onsubmit="return confirm('Delete this note permanently?')">
+                                            <input type="hidden" name="action" value="delete">
+                                            <input type="hidden" name="note_id" value="{{ note.id }}">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">🗑️ Delete</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-5 text-muted">
+                                <div style="font-size: 4rem;">📝</div>
+                                <p>No encrypted notes yet</p>
+                                <p class="small">Create your first secure note using the form on the left</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- How It Works -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5>🔐 How Encryption Works</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="mb-2" style="font-size: 2rem;">1️⃣</div>
+                        <strong>You Write</strong>
+                        <p class="small text-muted">Create your sensitive note</p>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="mb-2" style="font-size: 2rem;">2️⃣</div>
+                        <strong>We Encrypt</strong>
+                        <p class="small text-muted">AES-256 encryption applied</p>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="mb-2" style="font-size: 2rem;">3️⃣</div>
+                        <strong>Secure Storage</strong>
+                        <p class="small text-muted">Stored encrypted in database</p>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="mb-2" style="font-size: 2rem;">4️⃣</div>
+                        <strong>You Decrypt</strong>
+                        <p class="small text-muted">Only you have the key</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

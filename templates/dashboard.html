@@ -5,15 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - SecureCloud Corp</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .tool-card {
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+        .tool-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+    </style>
 </head>
 <body>
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="/">🔒 SecureCloud Corp</a>
+            <a class="navbar-brand" href="/">🔒 SecureCloud Security Suite</a>
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{{ url_for('dashboard') }}">Dashboard</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('profile') }}">Profile</a></li>
                     {% if user.is_admin %}
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('admin') }}">Admin</a></li>
@@ -37,43 +47,95 @@
         {% endwith %}
 
         <h1 class="mb-4">Welcome, {{ user.username }}! 👋</h1>
+        <p class="lead text-muted">Your Complete Cloud Security Toolkit</p>
         
-        <div class="row">
-            <div class="col-md-4 mb-3">
-                <div class="card">
-                    <div class="card-body text-center">
+        <!-- Quick Stats -->
+        
+        <div class="row mb-5">
+            <div class="col-md-3 mb-3">
+                <div class="card text-center">
+                    <div class="card-body">
                         <h5 class="card-title">🛡️ Security Status</h5>
                         <p class="card-text text-success fs-3">Active</p>
-                        <p class="text-muted">All systems operational</p>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4 mb-3">
-                <div class="card">
-                    <div class="card-body text-center">
-                        <h5 class="card-title">📊 Storage Used</h5>
-                        <p class="card-text fs-3">2.4 GB</p>
-                        <p class="text-muted">of 100 GB available</p>
+            <div class="col-md-3 mb-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">📁 Files Scanned</h5>
+                        <p class="card-text fs-3">{{ session.get('files_scanned', 0) }}</p>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4 mb-3">
-                <div class="card">
-                    <div class="card-body text-center">
-                        <h5 class="card-title">🔔 Alerts</h5>
-                        <p class="card-text fs-3">0</p>
-                        <p class="text-muted">No security incidents</p>
+            <div class="col-md-3 mb-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">🔐 Passwords Generated</h5>
+                        <p class="card-text fs-3">{{ session.get('passwords_generated', 0) }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">🔒 Encrypted Notes</h5>
+                        <p class="card-text fs-3">{{ notes_count }}</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="card mt-4">
-            <div class="card-header">
-                <h5>Recent Activity</h5>
+
+        <!-- Security Tools -->
+        <h2 class="mb-4">🛠️ Security Tools</h2>
+        <div class="row">
+            <div class="col-md-6 col-lg-3 mb-4">
+                <a href="{{ url_for('file_scanner') }}" class="text-decoration-none">
+                    <div class="card tool-card h-100">
+                        <div class="card-body text-center">
+                            <div class="mb-3" style="font-size: 3rem;">🛡️</div>
+                            <h5 class="card-title">File Scanner</h5>
+                            <p class="card-text text-muted">Scan files for malware and security threats</p>
+                        </div>
+                    </div>
+                </a>
             </div>
-            <div class="card-body">
-                <p>Your account is secure. All login attempts are monitored by our AI-powered security system.</p>
+
+            <div class="col-md-6 col-lg-3 mb-4">
+                <a href="{{ url_for('password_tools') }}" class="text-decoration-none">
+                    <div class="card tool-card h-100">
+                        <div class="card-body text-center">
+                            <div class="mb-3" style="font-size: 3rem;">🔐</div>
+                            <h5 class="card-title">Password Manager</h5>
+                            <p class="card-text text-muted">Check strength & generate secure passwords</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-md-6 col-lg-3 mb-4">
+                <a href="{{ url_for('security_audit') }}" class="text-decoration-none">
+                    <div class="card tool-card h-100">
+                        <div class="card-body text-center">
+                            <div class="mb-3" style="font-size: 3rem;">📊</div>
+                            <h5 class="card-title">Security Audit</h5>
+                            <p class="card-text text-muted">Scan websites and check SSL certificates</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-md-6 col-lg-3 mb-4">
+                <a href="{{ url_for('encrypted_vault') }}" class="text-decoration-none">
+                    <div class="card tool-card h-100">
+                        <div class="card-body text-center">
+                            <div class="mb-3" style="font-size: 3rem;">🔒</div>
+                            <h5 class="card-title">Encrypted Vault</h5>
+                            <p class="card-text text-muted">Store and encrypt sensitive notes securely</p>
+                        </div>
+                    </div>
+                </a>
             </div>
         </div>
     </div>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Scanner - SecureCloud Corp</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">🔒 SecureCloud Security Suite</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('profile') }}">Profile</a></li>
+                    {% if user.is_admin %}
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('admin') }}">Admin</a></li>
+                    {% endif %}
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <h1 class="mb-4">🛡️ File Security Scanner</h1>
+        <p class="lead text-muted">Upload files to scan for malware, suspicious content, and security threats</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Upload File for Scanning</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="file" class="form-label">Select File (Max 10MB)</label>
+                                <input class="form-control" type="file" id="file" name="file" required>
+                                <div class="form-text">Supported: .txt, .pdf, .doc, .docx, .jpg, .png, .zip</div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">🔍 Scan File</button>
+                        </form>
+                    </div>
+                </div>
+
+                {% if scan_result %}
+                <div class="card mt-4">
+                    <div class="card-header {% if scan_result.threat_level == 'Safe' %}bg-success text-white{% elif scan_result.threat_level == 'Warning' %}bg-warning{% else %}bg-danger text-white{% endif %}">
+                        <h5>Scan Results: {{ scan_result.filename }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>File Size:</strong> {{ scan_result.filesize }}</p>
+                                <p><strong>File Type:</strong> {{ scan_result.filetype }}</p>
+                                <p><strong>Threat Level:</strong> 
+                                    <span class="badge {% if scan_result.threat_level == 'Safe' %}bg-success{% elif scan_result.threat_level == 'Warning' %}bg-warning{% else %}bg-danger{% endif %}">
+                                        {{ scan_result.threat_level }}
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Scan Time:</strong> {{ scan_result.scan_time }}</p>
+                                <p><strong>Signatures Checked:</strong> {{ scan_result.signatures }}</p>
+                                <p><strong>Hash (SHA256):</strong> <small>{{ scan_result.hash[:32] }}...</small></p>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <h6>Security Analysis:</h6>
+                        <ul>
+                            {% for check in scan_result.checks %}
+                            <li>{{ check }}</li>
+                            {% endfor %}
+                        </ul>
+
+                        {% if scan_result.warnings %}
+                        <div class="alert alert-warning">
+                            <strong>⚠️ Warnings:</strong>
+                            <ul class="mb-0">
+                                {% for warning in scan_result.warnings %}
+                                <li>{{ warning }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>How It Works</h5>
+                    </div>
+                    <div class="card-body">
+                        <ol>
+                            <li class="mb-2">Upload your file</li>
+                            <li class="mb-2">AI analyzes file content & metadata</li>
+                            <li class="mb-2">Checks against malware signatures</li>
+                            <li class="mb-2">Generates security report</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5>Security Features</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled">
+                            <li>✅ Hash verification</li>
+                            <li>✅ File type validation</li>
+                            <li>✅ Suspicious pattern detection</li>
+                            <li>✅ Size limit protection</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

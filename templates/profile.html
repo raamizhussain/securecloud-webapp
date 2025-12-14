@@ -10,7 +10,7 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="/">🔒 SecureCloud Corp</a>
+            <a class="navbar-brand" href="/">🔒 SecureCloud Security Suite</a>
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a></li>
@@ -66,18 +66,31 @@
                         <h5>Security Settings</h5>
                     </div>
                     <div class="card-body">
+                        <!-- Change Password Form -->
+                        <form method="POST" action="{{ url_for('profile') }}">
+                            <input type="hidden" name="action" value="change_password">
+                            <div class="mb-3">
+                                <label class="form-label">Change Password</label>
+                                <input type="password" class="form-control form-control-sm mb-2" name="current_password" placeholder="Current password" required>
+                                <input type="password" class="form-control form-control-sm mb-2" name="new_password" placeholder="New password (min 8 characters)" required minlength="8">
+                                <input type="password" class="form-control form-control-sm mb-2" name="confirm_password" placeholder="Confirm new password" required>
+                                <button type="submit" class="btn btn-primary btn-sm">Update Password</button>
+                            </div>
+                        </form>
+
+                        <hr>
+
+                        <!-- 2FA Section -->
                         <div class="mb-3">
                             <label class="form-label">Two-Factor Authentication</label>
-                            <p class="text-muted">Add an extra layer of security to your account</p>
-                            <button class="btn btn-outline-primary btn-sm">Enable 2FA</button>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Password</label>
-                            <p class="text-muted">Last changed: Never</p>
-                            <button class="btn btn-outline-primary btn-sm">Change Password</button>
+                            <p class="text-muted small">Add an extra layer of security to your account</p>
+                            <div class="alert alert-info">
+                                <small>🚧 <strong>Coming Soon:</strong> 2FA will be available in the next update. We'll support authenticator apps and SMS verification.</small>
+                            </div>
                         </div>
                     </div>
                 </div>
+
             </div>
 
             <div class="col-md-4">

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Audit - SecureCloud Corp</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .port-card {
+            border-left: 3px solid #0d6efd;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">🔒 SecureCloud Security Suite</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('profile') }}">Profile</a></li>
+                    {% if user.is_admin %}
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('admin') }}">Admin</a></li>
+                    {% endif %}
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <h1 class="mb-4">📊 Security Audit Tools</h1>
+        <p class="lead text-muted">Scan websites, check SSL certificates, and audit security configurations</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row">
+            <!-- SSL Certificate Checker -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5>🔐 SSL Certificate Checker</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('security_audit') }}">
+                            <input type="hidden" name="action" value="ssl_check">
+                            <div class="mb-3">
+                                <label for="domain" class="form-label">Enter Domain or URL</label>
+                                <input type="text" class="form-control" id="domain" name="domain" placeholder="example.com or https://example.com" required>
+                                <div class="form-text">Enter website domain to check SSL certificate</div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">🔍 Check SSL</button>
+                        </form>
+
+                        {% if ssl_result %}
+                        <div class="mt-4">
+                            <div class="alert {% if ssl_result.is_secure %}alert-success{% else %}alert-danger{% endif %}">
+                                <h6>{% if ssl_result.is_secure %}✅ SSL Certificate Valid{% else %}⚠️ SSL Issues Detected{% endif %}</h6>
+                            </div>
+                            
+                            <table class="table table-sm">
+                                <tr>
+                                    <th width="40%">Domain:</th>
+                                    <td>{{ ssl_result.domain }}</td>
+                                </tr>
+                                <tr>
+                                    <th>SSL Status:</th>
+                                    <td>
+                                        <span class="badge {% if ssl_result.is_secure %}bg-success{% else %}bg-danger{% endif %}">
+                                            {{ ssl_result.status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Protocol:</th>
+                                    <td>{{ ssl_result.protocol }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Issuer:</th>
+                                    <td>{{ ssl_result.issuer }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Valid Until:</th>
+                                    <td>{{ ssl_result.expiry }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Security Score:</th>
+                                    <td>{{ ssl_result.score }}/100</td>
+                                </tr>
+                            </table>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Port Scanner -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-success text-white">
+                        <h5>🔌 Common Port Scanner</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('security_audit') }}">
+                            <input type="hidden" name="action" value="port_scan">
+                            <div class="mb-3">
+                                <label for="target" class="form-label">Enter Target Host/IP</label>
+                                <input type="text" class="form-control" id="target" name="target" placeholder="example.com or 192.168.1.1" required>
+                                <div class="form-text">Scan common ports for open services</div>
+                            </div>
+                            <button type="submit" class="btn btn-success">🔍 Scan Ports</button>
+                        </form>
+
+                        {% if port_result %}
+                        <div class="mt-4">
+                            <h6>Scan Results for {{ port_result.target }}</h6>
+                            <p class="text-muted small">Scanned {{ port_result.total_ports }} common ports</p>
+                            
+                            {% if port_result.open_ports %}
+                            <div class="alert alert-warning">
+                                <strong>⚠️ {{ port_result.open_ports|length }} Open Ports Detected</strong>
+                            </div>
+                            
+                            {% for port in port_result.open_ports %}
+                            <div class="card port-card mb-2">
+                                <div class="card-body py-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>Port {{ port.port }}</strong> - {{ port.service }}
+                                        </div>
+                                        <span class="badge bg-danger">OPEN</span>
+                                    </div>
+                                    <small class="text-muted">{{ port.description }}</small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <div class="alert alert-success">
+                                <strong>✅ No Common Ports Open</strong>
+                                <p class="mb-0 small">All scanned ports appear closed or filtered.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Score Card -->
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5>🎯 Website Security Score</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('security_audit') }}">
+                    <input type="hidden" name="action" value="security_score">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <input type="text" class="form-control" name="website" placeholder="Enter website URL (e.g., https://example.com)" required>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-info w-100">Calculate Score</button>
+                        </div>
+                    </div>
+                </form>
+
+                {% if security_score %}
+                <div class="mt-4">
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            <div class="display-3 {% if security_score.score >= 80 %}text-success{% elif security_score.score >= 60 %}text-warning{% else %}text-danger{% endif %}">
+                                {{ security_score.score }}
+                            </div>
+                            <p class="text-muted">Security Score</p>
+                        </div>
+                        <div class="col-md-8">
+                            <h6>Security Checks:</h6>
+                            <ul>
+                                {% for check in security_score.checks %}
+                                <li>{{ check }}</li>
+                                {% endfor %}
+                            </ul>
+                            
+                            {% if security_score.recommendations %}
+                            <div class="alert alert-info">
+                                <strong>💡 Recommendations:</strong>
+                                <ul class="mb-0">
+                                    {% for rec in security_score.recommendations %}
+                                    <li>{{ rec }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
