@@ -553,6 +553,7 @@ def file_scanner():
             scan_result = scan_file(filepath, filename)
             os.remove(filepath)
             session['files_scanned'] = session.get('files_scanned', 0) + 1
+            log_activity('file_scan', 'success', f'Scanned file: {filename}, threat level: {scan_result["threat_level"]}')
             flash(f'File scanned successfully: {scan_result["threat_level"]}', 
                   'success' if scan_result['threat_level'] == 'Safe' else 'warning')
         else:
@@ -572,8 +573,10 @@ def password_tools():
         if action == 'check':
             password = request.form.get('password')
             strength_result = check_password_strength(password)
+            log_activity('password_check', 'success', f'Password strength: {strength_result["strength"]}')
             flash(f'Password strength: {strength_result["strength"]}', 
                   'success' if strength_result['score'] >= 70 else 'warning')
+
         
         elif action == 'generate':
             length = int(request.form.get('length', 16))
@@ -583,9 +586,13 @@ def password_tools():
             use_special = 'use_special' in request.form
             
             generated_password = generate_password(length, use_upper, use_lower, use_digits, use_special)
+            
+            # Track stats and log activity
             session['passwords_generated'] = session.get('passwords_generated', 0) + 1
-
+            log_activity('password_generate', 'success', f'Generated password of length {length}')
+            
             flash('Password generated successfully!', 'success')
+
     
     return render_template('password_tools.html', 
                          strength_result=strength_result,
@@ -605,17 +612,21 @@ def security_audit():
         if action == 'ssl_check':
             domain = request.form.get('domain')
             ssl_result = check_ssl_certificate(domain)
+            log_activity('ssl_check', 'success', f'Checked SSL for: {domain}')
             flash(f'SSL check completed for {domain}', 'success')
         
         elif action == 'port_scan':
             target = request.form.get('target')
             port_result = scan_common_ports(target)
+            log_activity('port_scan', 'success', f'Scanned ports for: {target}, found {len(port_result["open_ports"])} open')
             flash(f'Port scan completed for {target}', 'success')
         
         elif action == 'security_score':
             website = request.form.get('website')
             security_score = calculate_security_score(website)
+            log_activity('security_score', 'success', f'Security score for {website}: {security_score["score"]}')
             flash(f'Security score calculated for {website}', 'success')
+
     
     return render_template('security_audit.html',
                          ssl_result=ssl_result,
@@ -648,8 +659,10 @@ def encrypted_vault():
             db.session.add(new_note)
             db.session.commit()
             
+            log_activity('note_create', 'success', f'Created encrypted note: {title}')
             flash('Note encrypted and saved successfully!', 'success')
             return redirect(url_for('encrypted_vault'))
+
         
         elif action == 'decrypt':
             note_id = int(request.form.get('note_id'))
@@ -663,17 +676,21 @@ def encrypted_vault():
                 if decrypted:
                     decrypted_note_id = note_id
                     decrypted_content = decrypted
+                    log_activity('note_decrypt', 'success', f'Decrypted note: {note.title}')
                     flash('Note decrypted successfully!', 'success')
                 else:
+                    log_activity('note_decrypt', 'failed', f'Failed decryption attempt for note: {note.title}')
                     flash('Invalid decryption password!', 'danger')
             else:
                 flash('Note not found', 'danger')
+
         
         elif action == 'delete':
             note_id = int(request.form.get('note_id'))
             note = EncryptedNote.query.get(note_id)
             
             if note and note.user_id == current_user.id:
+                log_activity('note_delete', 'success', f'Deleted note: {note.title}')
                 db.session.delete(note)
                 db.session.commit()
                 flash('Note deleted successfully!', 'success')
@@ -681,6 +698,7 @@ def encrypted_vault():
                 flash('Note not found', 'danger')
             
             return redirect(url_for('encrypted_vault'))
+
     
     notes = EncryptedNote.query.filter_by(user_id=current_user.id).order_by(EncryptedNote.created_at.desc()).all()
     
