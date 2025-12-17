@@ -5,7 +5,7 @@ from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import db, User, EncryptedNote
+from models import ActivityLog, db, User, EncryptedNote
 from dotenv import load_dotenv
 import os
 import hashlib
@@ -707,6 +707,69 @@ def encrypted_vault():
                          decrypted_note_id=decrypted_note_id,
                          decrypted_content=decrypted_content,
                          user=current_user)
+
+@app.route('/activity-logs')
+@login_required
+def activity_logs():
+    # Users can only see their OWN logs
+    action_filter = request.args.get('action')
+    status_filter = request.args.get('status')
+    
+    query = ActivityLog.query.filter_by(user_id=current_user.id)
+    
+    if action_filter:
+        query = query.filter_by(action=action_filter)
+    if status_filter:
+        query = query.filter_by(status=status_filter)
+    
+    logs = query.order_by(ActivityLog.timestamp.desc()).limit(100).all()
+    
+    all_logs = ActivityLog.query.filter_by(user_id=current_user.id).all()
+    stats = {
+        'success': len([l for l in all_logs if l.status == 'success']),
+        'failed': len([l for l in all_logs if l.status == 'failed']),
+    }
+    
+    return render_template('activity_logs.html', logs=logs, stats=stats, user=current_user)
+
+@app.route('/admin/activity-logs')
+@login_required
+def admin_activity_logs():
+    # Only admins can see ALL users' logs
+    if not current_user.is_admin:
+        flash('Access denied. Admin only.', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    # Get ALL logs from ALL users
+    action_filter = request.args.get('action')
+    status_filter = request.args.get('status')
+    user_filter = request.args.get('username')
+    
+    query = ActivityLog.query
+    
+    if action_filter:
+        query = query.filter_by(action=action_filter)
+    if status_filter:
+        query = query.filter_by(status=status_filter)
+    if user_filter:
+        query = query.filter_by(username=user_filter)
+    
+    logs = query.order_by(ActivityLog.timestamp.desc()).limit(500).all()
+    
+    # Get all unique usernames for filter dropdown
+    all_users = User.query.all()
+    
+    # Calculate system-wide stats
+    all_logs = ActivityLog.query.all()
+    stats = {
+        'total': len(all_logs),
+        'success': len([l for l in all_logs if l.status == 'success']),
+        'failed': len([l for l in all_logs if l.status == 'failed']),
+        'unique_users': len(set([l.username for l in all_logs if l.username]))
+    }
+    
+    return render_template('admin_activity_logs.html', logs=logs, stats=stats, users=all_users, user=current_user)
+
 
 @app.route('/logout')
 @login_required
