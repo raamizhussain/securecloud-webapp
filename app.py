@@ -29,7 +29,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # CSRF Protection
-# csrf = CSRFProtect(app)
+csrf = CSRFProtect(app)
 
 # Rate Limiting
 limiter = Limiter(
@@ -398,7 +398,7 @@ def home():
     return render_template('index.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
-@limiter.limit("3 per hour")
+@limiter.limit("20 per hour")
 def signup():
     if request.method == 'POST':
         username = sanitize_input(request.form.get('username'), 80)
@@ -432,7 +432,7 @@ def signup():
     return render_template('signup.html')
 
 @app.route('/login', methods=['GET', 'POST'])
-@limiter.limit("5 per minute")
+@limiter.limit("50 per minute")
 def login():
     if request.method == 'POST':
         username = sanitize_input(request.form.get('username'), 80)

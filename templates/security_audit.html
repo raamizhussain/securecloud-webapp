@@ -18,6 +18,7 @@
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('activity_logs') }}">Activity Logs</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('profile') }}">Profile</a></li>
                     {% if user.is_admin %}
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('admin') }}">Admin</a></li>
@@ -52,6 +53,7 @@
                     </div>
                     <div class="card-body">
                         <form method="POST" action="{{ url_for('security_audit') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                             <input type="hidden" name="action" value="ssl_check">
                             <div class="mb-3">
                                 <label for="domain" class="form-label">Enter Domain or URL</label>
@@ -111,6 +113,7 @@
                     </div>
                     <div class="card-body">
                         <form method="POST" action="{{ url_for('security_audit') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                             <input type="hidden" name="action" value="port_scan">
                             <div class="mb-3">
                                 <label for="target" class="form-label">Enter Target Host/IP</label>
@@ -163,6 +166,7 @@
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('security_audit') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <input type="hidden" name="action" value="security_score">
                     <div class="row">
                         <div class="col-md-8">
