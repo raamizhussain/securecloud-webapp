@@ -7,6 +7,8 @@ from flask_limiter.util import get_remote_address
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import ActivityLog, db, User, EncryptedNote
 from dotenv import load_dotenv
+import boto3
+from botocore.exceptions import ClientError
 import os
 import hashlib
 from datetime import datetime, timedelta
@@ -16,6 +18,8 @@ import string
 import re
 import ssl
 import socket
+import json
+from threading import Lock
 from urllib.parse import urlparse
 from cryptography.fernet import Fernet
 import base64
@@ -49,6 +53,19 @@ if not os.path.exists(UPLOAD_FOLDER):
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
+
+# AWS S3 Configuration
+s3_client = boto3.client(
+    's3',
+    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+    region_name=os.getenv('AWS_REGION')
+)
+S3_BUCKET = os.getenv('S3_BUCKET_NAME')
+
+# Thread-safe file writing
+log_file_lock = Lock()
+
 
 db.init_app(app)
 
@@ -354,8 +371,9 @@ def decrypt_text(encrypted_text, password):
         return None
 # ============= ACTIVITY LOGGING FUNCTIONS =============
 def log_activity(action, status='success', details=None, username=None):
-    """Log user activity for security monitoring"""
+    """Log user activity for security monitoring (Database + JSON + S3)"""
     try:
+        # 1. Save to database
         log = ActivityLog(
             user_id=current_user.id if current_user.is_authenticated else None,
             username=username or (current_user.username if current_user.is_authenticated else 'anonymous'),
@@ -367,8 +385,61 @@ def log_activity(action, status='success', details=None, username=None):
         )
         db.session.add(log)
         db.session.commit()
+        
+        # 2. Write to JSON file and upload to S3 (NEW!)
+        write_log_to_json(log)
+        
     except Exception as e:
         print(f"Logging error: {e}")
+
+
+def write_log_to_json(log):
+    """Write log entry to JSON file locally AND upload to S3 in real-time"""
+    try:
+        # 1. Create directory if doesn't exist
+        log_dir = 'realtime_logs'
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+        
+        # 2. Use daily log files
+        today = datetime.now().strftime('%Y-%m-%d')
+        log_file = os.path.join(log_dir, f'logs_{today}.jsonl')
+        
+        # 3. Prepare log entry
+        log_entry = {
+            'id': log.id,
+            'timestamp': log.timestamp.isoformat(),
+            'user_id': log.user_id,
+            'username': log.username,
+            'action': log.action,
+            'details': log.details,
+            'ip_address': log.ip_address,
+            'user_agent': log.user_agent,
+            'status': log.status
+        }
+        
+        # 4. Thread-safe append to local file
+        with log_file_lock:
+            with open(log_file, 'a') as f:
+                f.write(json.dumps(log_entry) + '\n')
+        
+        # 5. Upload to S3 immediately (real-time cloud backup)
+        upload_to_s3(log_file, f'logs/{today}/logs_{today}.jsonl')
+                
+    except Exception as e:
+        print(f"JSON write error: {e}")
+
+
+def upload_to_s3(local_file, s3_key):
+    """Upload file to S3 bucket"""
+    try:
+        s3_client.upload_file(local_file, S3_BUCKET, s3_key)
+        print(f"✅ Uploaded to S3: {s3_key}")
+    except ClientError as e:
+        print(f"❌ S3 upload error: {e}")
+    except Exception as e:
+        print(f"❌ Upload failed: {e}")
+
 
 def check_account_locked(user):
     """Check if account is locked due to failed login attempts"""
