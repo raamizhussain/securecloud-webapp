@@ -1,31 +1,37 @@
-# Python cache
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# Virtual environment
-venv/
-env/
-ENV/
+# Environment variables
+.env
 
 # Database
 instance/
 *.db
 *.sqlite
+*.sqlite3
 
-# Environment variables
-.env
-.flaskenv
+# Uploads
+uploads/
 
-# IDE
-.vscode/
-.idea/
-*.sublime-*
+# Real-time logs (SENSITIVE!)
+realtime_logs/
+*.jsonl
 
-# OS
+# Anomaly reports (SENSITIVE!)
+anomaly_reports/
+*.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+env/
+
+# OS files
 .DS_Store
 Thumbs.db
 
-# Environment variables
-.env
+# AWS credentials (just in case)
+*.pem
+*.key
+credentials
+config
