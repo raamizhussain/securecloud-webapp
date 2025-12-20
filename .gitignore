@@ -1,5 +1,7 @@
 # Environment variables
 .env
+.env.local
+.env.production
 
 # Database
 instance/
@@ -12,26 +14,49 @@ uploads/
 
 # Real-time logs (SENSITIVE!)
 realtime_logs/
-*.jsonl
+logs/*.csv
+logs/*.jsonl
 
 # Anomaly reports (SENSITIVE!)
 anomaly_reports/
+ai_analysis_reports/
 *.json
+
+# ML Models (too large for GitHub)
+models/*.pkl
+models/*.joblib
 
 # Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.pye
 venv/
 env/
+.venv/
 
 # OS files
 .DS_Store
 Thumbs.db
+.idea/
+.vscode/
 
 # AWS credentials (just in case)
 *.pem
 *.key
 credentials
 config
+
+# Logs
+*.log
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Backup files
+*.bak
+*.swp
+*~
